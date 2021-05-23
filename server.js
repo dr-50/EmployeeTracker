@@ -19,3 +19,7 @@ const db = mysql.createConnection(
     },
     console.log('Connected to the employeetracker_db database')
 );
+
+db.query('SELECT * FROM employee', function (err, results) {
+    console.log(results);
+});
