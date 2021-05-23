@@ -17,9 +17,13 @@ const db = mysql.createConnection(
         password: '',
         database: 'employeetracker'
     },
-    console.log('Connected to the employeetracker_db database')
+    console.log('Connected to the employeetracker database')
 );
 
 db.query('SELECT * FROM employee', function (err, results) {
     console.log(results);
+});
+
+app.use((req, res)=> {
+    res.status(404).end();
 });
