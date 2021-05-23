@@ -21,9 +21,14 @@ const db = mysql.createConnection(
 );
 
 db.query('SELECT * FROM employee', function (err, results) {
+    console.log('This is the select query section')
     console.log(results);
 });
 
 app.use((req, res)=> {
     res.status(404).end();
 });
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+})
