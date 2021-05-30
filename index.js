@@ -3,22 +3,22 @@ const inquirer = require('inquirer');
 const cTable = require('console.table');
 const db = require('./db/connection')
 const mysql = require('mysql2');
-const router = require('express').Router();
-const apiRoutes = require('./routes/apiRoutes');
-const { async } = require('rxjs');
-const { param } = require('./routes/apiRoutes');
+// const router = require('express').Router();
+// const apiRoutes = require('./routes/apiRoutes');
+// const { async } = require('rxjs');
+// const { param } = require('./routes/apiRoutes');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
 
 
 
-//express middleware
-app.use(express.urlencoded({extended: false }));
-app.use(express.json());
+// //express middleware
+// app.use(express.urlencoded({extended: false }));
+// app.use(express.json());
 
-// Use apiRoutes
-app.use(apiRoutes);
+// // Use apiRoutes
+// app.use(apiRoutes);
 
 //question for users to select an action
 const questions = () => {
@@ -44,39 +44,47 @@ function init() {
 
             // Select all employees
             db.query(sql, (err, rows)=>{
+            console.log(`
+            `);
             console.table(rows);
             })
             init();
         } 
         // complete code for view employees by department
         if (data.action === 'View All Employees By Department') {
-            console.log(data.action)
             const sql ='SELECT Distinct d.name FROM department d'
             db.query(sql, (err, row)=> {
-            console.log(row[0].name)
             let deptSelector = [];
 
 
             for (var i=0; i<row.length; i++){
                 deptSelector.push(row[i].name);
             }
-            console.log(deptSelector);
-
+            
             return inquirer.prompt([
                 {
                     type: 'list',
                     name: 'department',
                     choices: deptSelector
                 }
-            ]).then(data =>{        
-            const sql2 = 'SELECT e.* FROM employee e, department d WHERE d.name=?'
+            ]).then(data =>{    
+            console.log(`
+            
+            `);    
+            const sql2 = 'SELECT e.* FROM employee e, role r, department d WHERE e.role_id=r.id and r.department_id=d.id and d.name=?'
             const params = data.department;
     
             db.query(sql2, params, (err, row) => {
+            console.log(`
+            `);
             console.table(row);
             })           
-        })
-        })
+        });
+
+        });
+        console.log(`
+        `);
+        init();
     }   
         //complete add employee code
         if (data.action === 'Add Employee') {
@@ -154,8 +162,12 @@ function init() {
                    console.log(err);
                }
                console.log(`${first_name} ${last_name} has been added!`);
-           })
-        })
+           });
+           console.log(`
+           `);
+           init();
+        });
+
         }
         if (data.action === 'Remove Employee') {
             console.log(data.action)
@@ -189,9 +201,12 @@ function init() {
 
             const sqlRole = 'SELECT DISTINCT r.title FROM role r'
 
-            db.query(sqlRole, (err, result) => {
-                console.table(result)
+            db.query(sqlRole, (err, resultRole) => {
+                console.table(resultRole)
             })
+            console.log(`
+            `);
+            init();
         }
         if (data.action === 'Add Role') {
             console.log(data.action)
