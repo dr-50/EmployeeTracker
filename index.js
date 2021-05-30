@@ -29,12 +29,13 @@ const questions = () => {
 //function to initialize app
 function init() {
     questions().then(data => {
+
         if (data.action === 'View All Employees'){
-            console.log(data.action)
-            const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.name 'department', r.salary, e.manager_id, e2.first_name, e2.last_name
+            const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.name 'department', 
+            r.salary, CONCAT(e2.first_name," ", e2.last_name) as 'Manager'
             FROM employee as e 
-            JOIN role r on r.id=e.role_id
-            JOIN department d on d.id=r.department_id
+            LEFT JOIN role r on r.id=e.role_id
+            LEFT JOIN department d on d.id=r.department_id
             LEFT JOIN employee e2 on e2.id = e.manager_id`;
 
             // Select all employees
@@ -42,18 +43,17 @@ function init() {
             console.log(`
             `)
             console.table(rows);
-            })
+            });
             init();
         } 
         // complete code for view employees by department
         if (data.action === 'View All Employees By Department') {
             const sql ='SELECT Distinct d.name FROM department d'
-            db.query(sql, (err, row)=> {
+            db.query(sql, (err, rowEmpDept)=> {
             let deptSelector = [];
 
-
-            for (var i=0; i<row.length; i++){
-                deptSelector.push(row[i].name);
+            for (var i=0; i<rowEmpDept.length; i++){
+                deptSelector.push(rowEmpDept[i].name);
             }
             
             return inquirer.prompt([
@@ -63,24 +63,25 @@ function init() {
                     choices: deptSelector
                 }
             ]).then(data =>{    
-            console.log(`
-            `);    
-            const sql2 = 'SELECT e.* FROM employee e, role r, department d WHERE e.role_id=r.id and r.department_id=d.id and d.name=?'
+            const sql2 = 'SELECT e.first_name, e.last_name FROM employee e, role r, department d WHERE e.role_id=r.id and r.department_id=d.id and d.name=?'
             const params = data.department;
     
-            db.query(sql2, params, (err, row) => {
-            console.table(row);
-            })           
+            db.query(sql2, params, (err, rowDept) => {
+            console.log(`
+            `);
+            console.table(rowDept);
+            })        
+            
+            console.log(`
+            `);
+            init();
         });
 
         });
-        console.log(`
-        `);
-        init();
+
     }   
         //complete add employee code
         if (data.action === 'Add Employee') {
-            console.log(data.action)
             let roleSelector = [];
             let managerSelector = [];
 
@@ -159,10 +160,9 @@ function init() {
            `);
            init();
         });
-
         }
         if (data.action === 'Remove Employee') {
-            console.log(data.action)
+
             let employeeArr = [];
 
             const sqlEmp = 'SELECT CONCAT(e.id, "-", e.first_name," ", e.last_name) as nameID FROM employee e'
@@ -172,8 +172,7 @@ function init() {
                 for (var i=0; i<results.length; i++){
                     employeeArr.push(results[i].nameID)
                 }
-                console.log(employeeArr)
-                        return inquirer.prompt([
+                return inquirer.prompt([
                 {
                     type: 'list',
                     name: 'employee',
@@ -190,36 +189,35 @@ function init() {
                     console.log(`employee - ${employeeIDObj[1]} - deleted`);
                 })
 
-
+                console.log(`
+                `);
+                init();
             })
         })
         }
         if (data.action === 'Update Employee Role') {
-            console.log(data.action)
+            
         }
         if (data.action === 'View All Roles') {
-            console.log(data.action)
-
             const sqlRole = 'SELECT DISTINCT r.title FROM role r'
 
             db.query(sqlRole, (err, resultRole) => {
                 console.table(resultRole)
+                console.log(`
+                `);
+                init();
             })
-            console.log(`
-            `);
-            init();
+
         }
         if (data.action === 'Add Role') {
-            console.log(data.action)
             let deptSelector = [];
-            const sqlDept = 'SELECT CONCAT (d.id,"-"d.name) as deptID FROM department d'
-            db.query(sqlDept, (err, result) => {
-                for (var i=0; i<result.length; i++){
-                    deptSelector.push(result[i].deptID)
+            
+            const sqlDept = 'SELECT CONCAT (d.id,"-", d.name) as deptID FROM department d'
+            db.query(sqlDept, (err, resultDept) => {
+                for (var i=0; i<resultDept.length; i++){
+                    deptSelector.push(resultDept[i].deptID)
                 }
-            })
-
-
+            
             return inquirer.prompt([
                 {
                     type: 'input',
@@ -250,24 +248,30 @@ function init() {
                 {
                     type: 'list',
                     name: 'department',
-                    choices: departmentSelector
+                    choices: deptSelector
                 }
             ]).then(data => {
-            
+            const deptIDObj = data.department.split("-");
+            const deptID = deptIDObj[0];
             const sqlRoleAdd ='INSERT INTO role  (title, salary, department_id) VALUES (?, ?, ?)'
-            const paramsRoleAdd = []
+            const paramsRoleAdd = [data.title, data.salary, deptID];
 
             db.query(sqlRoleAdd, paramsRoleAdd, (err, result) => {
                 if (err){
                     console.log(err);
                 }
-                console.log(`${role} has been added!`);
-            })
+                console.log(`${data.title} has been added!`);
+                
+                });
+                console.log(`
+                `);
+                init();
+            });
         })
+
         }
         //Remove Role
         if (data.action === 'Remove Role') {
-            console.log(data.action)
             let roleSelector = [];
 
             db.query('SELECT CONCAT(r.id,"-",r.title) as roleID FROM role r', (err, resultRow) => {
@@ -283,17 +287,20 @@ function init() {
                 }
             ]).then(data => {
                 //setup remove query
-                const deletedRowObj = data.roleID.split("-")
+                const deletedRowObj = data.role_selection.split("-")
                 const deletedRow = deletedRowObj[0];
 
                 db.query('DELETE FROM role WHERE id = ?', deletedRow, (err, resultDelete) => {
                     if (err) {
                         console.log(err);
                     }
-                    console.log(resultDelete);
+                    console.log(`${deletedRowObj[1]} has been deleted`);
                 })
             })
         })
+        console.log(`
+        `);
+        init();
         }
     })
     
