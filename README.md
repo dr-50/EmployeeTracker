@@ -6,6 +6,7 @@ Command line application to manage employees through SQL database
 ## Built With
 * Express
 * mysql2
+* inquirer
 * JavaScript
 
 ## Github
