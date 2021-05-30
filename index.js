@@ -3,22 +3,16 @@ const inquirer = require('inquirer');
 const cTable = require('console.table');
 const db = require('./db/connection')
 const mysql = require('mysql2');
-// const router = require('express').Router();
-// const apiRoutes = require('./routes/apiRoutes');
-// const { async } = require('rxjs');
-// const { param } = require('./routes/apiRoutes');
-
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-
-
-// //express middleware
-// app.use(express.urlencoded({extended: false }));
-// app.use(express.json());
-
-// // Use apiRoutes
-// app.use(apiRoutes);
+//greeting for initial run
+const greeting = () => {
+    console.table( `===========================
+WELCOME TO EMPLOYEE TRACKER
+===========================`);
+init();
+}
 
 //question for users to select an action
 const questions = () => {
@@ -37,15 +31,16 @@ function init() {
     questions().then(data => {
         if (data.action === 'View All Employees'){
             console.log(data.action)
-            const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.name 'department', r.salary, e.manager_id
-            FROM employee as e , role as r, department as d
-            Where e.role_id=r.id 
-            and r.department_id=d.id;`;
+            const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.name 'department', r.salary, e.manager_id, e2.first_name, e2.last_name
+            FROM employee as e 
+            JOIN role r on r.id=e.role_id
+            JOIN department d on d.id=r.department_id
+            LEFT JOIN employee e2 on e2.id = e.manager_id`;
 
             // Select all employees
             db.query(sql, (err, rows)=>{
             console.log(`
-            `);
+            `)
             console.table(rows);
             })
             init();
@@ -69,14 +64,11 @@ function init() {
                 }
             ]).then(data =>{    
             console.log(`
-            
             `);    
             const sql2 = 'SELECT e.* FROM employee e, role r, department d WHERE e.role_id=r.id and r.department_id=d.id and d.name=?'
             const params = data.department;
     
             db.query(sql2, params, (err, row) => {
-            console.log(`
-            `);
             console.table(row);
             })           
         });
@@ -181,17 +173,26 @@ function init() {
                     employeeArr.push(results[i].nameID)
                 }
                 console.log(employeeArr)
-            })
-
-            return inquirer.prompt([
+                        return inquirer.prompt([
                 {
                     type: 'list',
                     name: 'employee',
                     choices: employeeArr
                 }
             ]).then(data => {
-                console.log('post prompt')
+                const employeeIDObj = data.employee.split("-");
+                const employeeID = employeeIDObj[0]
+
+                db.query('DELETE FROM employee e where e.id = ?', [employeeID], (err, resultEmpDel) => {
+                    if(err){
+                        console.log(err)
+                    }
+                    console.log(`employee - ${employeeIDObj[1]} - deleted`);
+                })
+
+
             })
+        })
         }
         if (data.action === 'Update Employee Role') {
             console.log(data.action)
@@ -264,25 +265,35 @@ function init() {
             })
         })
         }
+        //Remove Role
         if (data.action === 'Remove Role') {
             console.log(data.action)
             let roleSelector = [];
-            const sqlRoleID = 'SELECT CONCAT(r.id,"-",r.title) as roleID FROM role r'
-            db.query(sqlRoleID, (err, result) => {
-                for (var i=0; i<result.length; i++){
-                    roleSelector.push(result[i].roleID)
+
+            db.query('SELECT CONCAT(r.id,"-",r.title) as roleID FROM role r', (err, resultRow) => {
+                for (var i=0; i<resultRow.length; i++){
+                    roleSelector.push(resultRow[i].roleID);
                 }
-            })
 
             return inquirer.prompt([
                 {
                     type: 'list',
-                    name: 'role',
+                    name: 'role_selection',
                     choices: roleSelector
                 }
             ]).then(data => {
                 //setup remove query
+                const deletedRowObj = data.roleID.split("-")
+                const deletedRow = deletedRowObj[0];
+
+                db.query('DELETE FROM role WHERE id = ?', deletedRow, (err, resultDelete) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    console.log(resultDelete);
+                })
             })
+        })
         }
     })
     
@@ -299,4 +310,4 @@ app.listen(PORT, () => {
 })
 
 // function call to initialize app
-init();
+greeting();
