@@ -3,7 +3,9 @@ const router = express.Router();
 const db = require('../../db/connection');
 const inputCheck = require('../../utils/inputCheck');
 
+
 // Select all employees
+
 router.get('/employee', (req,res)=> {
     const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.name 'department', r.salary, e.manager_id
                  FROM employee as e , role as r, department as d
@@ -12,10 +14,11 @@ router.get('/employee', (req,res)=> {
     
     // Select all employees
     db.query(sql, (err, rows)=>{
-    console.table(rows);
+    res.send(console.table(rows));
     })
 
 })
+
 
 //Select all employees by department
 router.get('/employee/:id'), (req, res)=> {
@@ -26,7 +29,7 @@ router.get('/employee/:id'), (req, res)=> {
     and d.name = ?;`;
     const params = 'TestDept';
     
-    db.query(sql, params    , (err, row) => {
+    db.query(sql, params, (err, row) => {
     console.table(row);
     })
 }
@@ -40,7 +43,7 @@ router.post('/employee', ({ body }, res)=>{
         res.status(400).json({ error: errors});
         return;
     }
-    
+
     const sql = `INSERT INTO employee (first_name, last_name) VALUES(?, ?)`;
     const params = ['Mossy', 'Ross'];
 
@@ -53,7 +56,7 @@ router.post('/employee', ({ body }, res)=>{
             message: 'success',
             data: body  
         });
-    });
+    });    
 });
 
 

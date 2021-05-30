@@ -19,6 +19,7 @@
   "homepage": "https://github.com/dr-50/EmployeeTracker#readme",
   "dependencies": {
     "console.table": "^0.10.0",
+    "envdot": "0.0.3",
     "express": "^4.17.1",
     "inquirer": "^8.1.0",
     "mysql2": "^2.2.5"
